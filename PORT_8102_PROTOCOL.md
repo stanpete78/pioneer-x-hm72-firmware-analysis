@@ -135,11 +135,11 @@ Commands sent while in a playback source. Exact meaning depends on current input
 
 | Command | Meaning | Verified |
 |---------|---------|----------|
-| `10PB` | Play | not tested |
-| `11PB` | Pause | not tested |
+| `10PB` | Play | ❌ No-op from list view (does not initiate playback). No effect from active Now Playing either. |
+| `11PB` | Pause | ❌ No-op on live Internet Radio stream — elapsed time keeps incrementing (0:06 → 0:10 → 0:21 during "paused" state). Pause likely only works on local media (CD/USB), not live streams. |
 | `12PB` | Stop | ✅ Stopped Internet Radio stream — GCP screen-flags transition `02→06→02` with metadata bit cleared, time counter stops |
-| `13PB` | Skip Forward / Next | not tested |
-| `14PB` | Skip Back / Prev | not tested |
+| `13PB` | Skip Forward / Next | ⚠️ Disconnects current stream → device enters error state (`GCP00…"Server Disconnected"`). Does NOT load the next favorite. Same root cause as GHP/30PB: no preset-switching via basic protocol. |
+| `14PB` | Skip Back / Prev | ⚠️ Same as 13PB — leaves device in `Server Disconnected` error state. Recoverable with `31PB`. |
 | `15PB` | FF | not tested |
 | `18PB` | Rewind | not tested |
 | `20PB` | Menu/Home | not tested |
@@ -351,8 +351,8 @@ decoded. Not tested live to avoid disrupting playback.
 | ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK`, `?GAP` (in menu context) |
 | ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGGP` scroll-cursor-to-index, `NNNNNGHP` select-and-open (hierarchical menus only), `12PB` Stop, `31PB` back |
 | ⚠️ State toggles but display unchanged | `MF`, `MO` (`?M` flips between MUT0/MUT1 as expected, but front panel shows no MUTE indicator — audio effect unverified) |
-| ⚠️ Triggers screen transition but no useful effect | `30PB` Enter on Favorites preset list (transitions to playback screen but device resumes default stream, not highlighted item) |
-| ❌ No effect | `FU`, `FD` (Function up/down — input does not advance) |
+| ⚠️ Triggers screen transition but no useful effect | `30PB` Enter on Favorites preset list (transitions to playback screen but device resumes default stream, not highlighted item); `13PB`/`14PB` Skip (disconnect stream, do not move to next favorite) |
+| ❌ No effect | `FU`, `FD` (Function up/down — input does not advance), `10PB` Play (no-op from list and from active playback), `11PB` Pause (no-op on live Internet Radio streams — clock keeps ticking) |
 | ❓ No response on HMx | `?RGC`, `?GIA`, `?GAP` outside menu, `GFP`, `GGP`, `GHP` bare, `FCA`, `FCB`, `PR`, `?MUT` long form (gets `R` ACK only), `?FL`/`?PWR`/`?VOL`/`?FN` long forms, `?L`/`?S`/`?R`/`?AST`, `?STA`–`?STP` family (only `?STH` returns `R`) |
 | ❌ Rejected (FN codes not implemented on HMx) | `04FN`, `05FN`, `06FN`, `10FN`, `15FN`, `19FN`, `25FN`, `33FN`, `41FN`, `46FN`, `47FN`, `48FN`, `49FN`, `50FN` |
 | ⏭️ Not tested | `PF`, `PO`, `10PB` (Play), `11PB` (Pause), `13PB`–`18PB` (Skip/FF/Rewind), `20PB` (Menu/Home), `26PB`–`29PB` (cursor up/down/left/right), `32PB`–`41PB` (Shuffle/Repeat/Fav/?), all `CDP` |
@@ -535,16 +535,39 @@ ones (`VolumeValue`, `LikeIt`, `Favorites`, `ListeningmodeXxx`) suggest the
 basic protocol can do more than the visible verb names imply, but the TCP
 command syntax for them isn't documented.
 
-### Enabling the Extended API (untested, potentially risky)
+### Enabling the Extended API (tested 2026-05-14)
 
 From the BridgeCo debug shell on port 9000:
 ```
-set cne/PioTunnelingControlService/EnabledQueryExAPI 1
+set /cne/PioTunnelingControlService/EnabledQueryExAPI 1
 ```
 
-This flips the gate from `0` to `1` and might unlock the iControlAV API for
-new connections. **Not yet attempted on the live device** — could affect
-existing services or require a reboot to take effect.
+The leading `/` is important — anchors the path at SDS root regardless of
+shell cwd. Also send Ctrl-C + Ctrl-U + `\r\n` first to reset the shell's
+input buffer (autocomplete state can pollute it between sessions).
+
+Result: flag value persists (`get` confirms `Value=1`), but **no observable
+change to the running protocol**:
+- `?STA`–`?STP` family — still silent
+- `?XFAV`, `?CAPP`, `?ICAV` and other speculative commands — silent
+- `NNNNNGHP` / `30PB` on Favorites — still resume the device's internal
+  default stream instead of switching to the highlighted preset
+
+Likely the flag is read at service start (boot), or the iControlAV5
+implementation is line-protocol-incompatible (binary/length-prefixed
+framing that we don't yet know). **A device reboot may be needed** to
+actually activate the Extended API; not attempted here.
+
+Per-X-HM72 SDS subtree for reference:
+```
+/cne/PioTunnelingControlService/
+  ├── Enabled               (1)
+  ├── MultipleClientPort    (0)
+  ├── Port1                 (8102)
+  ├── Port2                 (0)
+  ├── Port3                 (0)
+  └── EnabledQueryExAPI     (0 by default; flipped to 1 on this device 2026-05-14)
+```
 
 ---
 

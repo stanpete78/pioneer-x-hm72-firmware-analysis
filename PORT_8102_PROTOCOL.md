@@ -68,13 +68,19 @@ FN52   → Input: LineIn2
 ### Mute
 | Command | Response | Description |
 |---------|----------|-------------|
-| `?M` | `MUT0`/`MUT1` | Query mute. `MUT0` = sound on (not muted), `MUT1` = muted |
-| `MF` | — | **Mute ON** (silence audio) — counter-intuitive name; verified by live test |
-| `MO` | — | **Mute OFF** (restore audio) — verified by live test |
+| `?M` | `MUT0`/`MUT1` | Query mute. `MUT0` = muted, `MUT1` = not muted |
+| `MO` | — | Mute MAIN zone (turn mute ON) |
+| `MF` | — | unMute MAIN zone (turn mute OFF) |
 
-> Note: command names `MF`/`MO` are reversed from intuitive ("F"=oFF, "O"=On).
-> Pioneer's actual mapping was confirmed by toggling and observing `?M` state
-> changes — `MF` turns sound off, `MO` turns sound on.
+> Pioneer convention (per official RS-232C spec): the digit `0` denotes the
+> "active/engaged" state of the named function. So `MUT0` = mute is engaged
+> (audio silent), `MUT1` = mute is not engaged (audio playing). Likewise
+> `PWR0` = device active, `PWR1` = device standby.
+>
+> Live test on X-HM72 confirmed the state-flag transitions match Pioneer's
+> spec, but the **front-panel display does not show a MUTE indicator** when
+> triggered via this protocol on this model — audio effect at the speaker
+> output not independently verified.
 
 ### Input Function
 | Command | Response | Description |
@@ -179,11 +185,18 @@ or pure side-effect command).
 
 ## Verified Command Status (live test on XC-HM72, firmware 1.010)
 
+> Command names and string format extracted from the firmware binary
+> (constant pool at file offset `0x0015a3e0`). Command **semantics** follow
+> Pioneer's published RS-232C protocol (cross-checked against the spec sheet
+> at <https://blog.mikepoulson.com/2011/06/programmatically-controlling-pioneer.html>).
+> The firmware does not contain documentation strings — semantics had to be
+> inferred from Pioneer's external convention, then validated by live test.
+
 | Status | Commands |
 |--------|----------|
 | ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK` |
-| ✅ Confirmed effective state change | `VU`, `VD`, `MF`, `MO` |
-| ⚠️ Command labels reversed from doc | `MF` (= Mute On), `MO` (= Mute Off) |
+| ✅ Confirmed effective state change | `VU`, `VD` (volume changes visible on display, user-verified) |
+| ⚠️ State toggles but display unchanged | `MF`, `MO` (`?M` flips between MUT0/MUT1 as expected, but front panel shows no MUTE indicator — audio effect unverified) |
 | ❓ No response, function unclear | `?RGC`, `?GIA`, `?GAP`, `GFP`, `GGP`, `GHP`, `FCA`, `FCB`, `PR` |
 | ⏭️ Not tested (would change user-facing state) | `PF`, `PO`, all `##FN`, all `PB`, all `CDP` |
 

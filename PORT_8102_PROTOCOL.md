@@ -28,6 +28,18 @@ Response: <RESPONSE>\r\n
 
 No authentication, no handshake required. Connect and send immediately.
 
+While a TCP connection is open the device:
+
+1. Sends `R\r\n` ("ready") about every 30 seconds as a heartbeat.
+   **Verified live** — observed at ~30s intervals on a persistent socket.
+2. Pushes unsolicited state updates when something changes:
+   - Volume change → `VOLnnn`
+   - Input change → `FNnn`
+   - Menu refresh → full `GBP/GCP/GDP/GEP` block (see GUI Menu Protocol)
+   - Icon change on entering a menu-based source → `ICA0` or `ICA1`
+3. A client must demultiplex: incoming lines are either replies to its last
+   command OR unsolicited pushes. The protocol has no request IDs.
+
 ```python
 import socket
 s = socket.socket()
@@ -90,31 +102,30 @@ FN52   → Input: LineIn2
 | `FU` | — | Function Up — cycle to next input |
 | `FD` | — | Function Down — cycle to previous input |
 
-**Input Function Codes (`##FN`):**
+**Input Function Codes (verified live on X-HM72):**
 
-| Code | Input |
-|------|-------|
-| `01FN` | Phono |
-| `02FN` | CD |
-| `04FN` | DVD/BD |
-| `05FN` | TV |
-| `06FN` | Sat/Cable |
-| `10FN` | Video 1 |
-| `15FN` | DVR/BDR |
-| `17FN` | iPod |
-| `19FN` | (unknown) |
-| `25FN` | Internet Radio |
-| `33FN` | Adapter Port |
-| `38FN` | iPod/USB |
-| `41FN` | iPod/USB (rear?) |
-| `44FN` | AirPlay |
-| `45FN` | Spotify |
-| `48FN` | (unknown) |
-| `49FN` | Game |
-| `50FN` | BT Audio |
-| `51FN` | DAB |
-| `52FN` | LineIn2 |
-| `56FN` | (unknown) |
+| Code | Input | Verified | Notes |
+|------|-------|----------|-------|
+| `01FN` | Phono | ✅ switched | |
+| `02FN` | CD | ✅ switched | |
+| `17FN` | iPod | ✅ switched | Opens menu (`ICA0` + `GBP` block) |
+| `38FN` | Internet Radio | ✅ switched | Opens menu — was mis-labelled "iPod/USB" before |
+| `44FN` | Media Server (DLNA) | ✅ switched | Opens menu (Fritzbox, etc.) — was mis-labelled "AirPlay" before |
+| `45FN` | Favorites (Internet Radio presets) | ✅ switched | Same content as 51/56 below — was mis-labelled "Spotify" before |
+| `51FN` | Favorites alias | ✅ switched | Returns same menu as `45FN` |
+| `52FN` | Line In | ✅ switched | |
+| `56FN` | Favorites alias | ✅ switched | Returns same menu as `45FN` |
+| `04FN` `05FN` `06FN` `10FN` `15FN` `19FN` `25FN` `33FN` `41FN` `46FN` `47FN` `48FN` `49FN` `50FN` | ❌ rejected | rejected | Listed in firmware but device silently ignores |
+
+Test method: send `##FN`, wait 2.5s, drain pushes, query `?F`. The device pushes
+`FNnn` on a successful switch and remains on the previous input if rejected.
+
+**Input cycling:**
+
+| Command | Function | Verified |
+|---------|----------|----------|
+| `FU` | Function Up — cycle to next input | not tested |
+| `FD` | Function Down — cycle to previous input | not tested |
 
 ### Playback (PB commands)
 Commands sent while in a playback source. Exact meaning depends on current input.
@@ -183,6 +194,78 @@ or pure side-effect command).
 | `?RGF` | `RGF<64-char bitfield>` | ✅ | Remote feature capabilities |
 | `?RGC` | — | — | Remote config? (no response on HMx) |
 
+### GUI Menu Protocol (`?GAP` + `GBP`/`GCP`/`GDP`/`GEP`)
+
+**Live-verified** on X-HM72. Active when device is in a menu-capable input
+(iPod `17FN`, Internet Radio `38FN`, Media Server `44FN`, Favorites
+`45/51/56FN`). Silent on inputs without a menu (LineIn `52FN`, Phono `01FN`,
+CD `02FN`).
+
+**Query the current screen:**
+```
+?GAP
+```
+
+Returns a 4-line block describing the entire visible menu state:
+
+```
+GBPnn                                    — count of GEP entries currently shown
+GCPwwxy0z0"SCREEN_LABEL"                  — screen header (see fields below)
+GDPaaaaabbbbbccccc                        — display range over total
+GEPnnxxx"item label"                      — one per entry
+```
+
+Field meanings:
+
+| Field | Meaning |
+|-------|---------|
+| `GBPnn` | `nn` = 2-digit count of currently-shown entries |
+| `GCPwwxy0z0"label"` | `ww` = screen type (2 digits); `x` = list-update flag; `y` = top-menu-key-enabled; `z` = return-key-enabled. Label in quotes is the screen name |
+| `GDPaaaaabbbbbccccc` | `aaaaa` = start index (5-digit), `bbbbb` = end index, `ccccc` = total count |
+| `GEPnnxxx"label"` | `nn` = display-row position; `xxx` = entry flags (e.g. `101` = highlighted, `001` = unhighlighted, `102`/`002` indicate playable list items) |
+
+**Live example — Internet Radio Favorites (`45FN`)**:
+```
+GBP08
+GCP01100000000000000"Top Menu"
+GDP000010000800013          ← items 1-8 of 13 total
+GEP01102"Deutschlandfunk"   ← highlighted (suffix 102)
+GEP02002"Deutschlandfunk Kultur"
+GEP03002"Deutschlandfunk Nova"
+GEP04002"SWR1 Baden-Wrttemberg"
+GEP05002"SWR3"
+GEP06002"DASDING 90.8"
+GEP07002"181.fm - Christmas Mix"
+GEP08002"181.fm - Christmas Classics"
+```
+
+**Navigation commands (verified):**
+
+| Command | Function | Verified |
+|---------|----------|----------|
+| `NNNNNGHP` | Select & open list item at index NNNNN (5-digit zero-padded) | ✅ `00001GHP` opened Fritzbox sub-menu |
+| `31PB` | Back / return to parent | ✅ navigated back from sub-menu to top |
+| `30PB` | Enter / confirm | not tested |
+| `NNNNNGGP` | Scroll to row NNNNN | not tested |
+
+**Live example — drilling into a folder:**
+
+Starting on `44FN` (Media Server):
+```
+?GAP        → GBP01 | GCP..."Top Menu" | GDP000010000100001 | GEP01101"Fritzbox"
+00001GHP    → GBP06 | GCP..."Fritzbox"  | GDP000010000600006
+              GEP01101"Musik"
+              GEP02001"Bilder"
+              GEP03001"Filme"
+              GEP04001"Internetradio"
+              GEP05001"Podcasts"
+              GEP06001"Datei-Index"
+31PB        → back to top menu (GBP01 | GEP01101"Fritzbox")
+```
+
+Note: `00001GHP` both *selects* and *opens* the item — it's not a separate
+highlight/enter step. Use `NNNNNGGP` to just scroll without opening.
+
 ### Status / Station Query API (`?STA` – `?STP`)
 
 A separate command table at firmware offset `0x00017158` defines a family of
@@ -207,11 +290,12 @@ decoded. Not tested live to avoid disrupting playback.
 
 | Status | Commands |
 |--------|----------|
-| ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK` |
-| ✅ Confirmed effective state change | `VU`, `VD` (volume changes visible on display, user-verified) |
+| ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK`, `?GAP` (in menu context) |
+| ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGHP` select-and-open, `31PB` back |
 | ⚠️ State toggles but display unchanged | `MF`, `MO` (`?M` flips between MUT0/MUT1 as expected, but front panel shows no MUTE indicator — audio effect unverified) |
-| ❓ No response, function unclear | `?RGC`, `?GIA`, `?GAP`, `GFP`, `GGP`, `GHP`, `FCA`, `FCB`, `PR` |
-| ⏭️ Not tested (would change user-facing state) | `PF`, `PO`, all `##FN`, all `PB`, all `CDP` |
+| ❓ No response on HMx | `?RGC`, `?GIA`, `?GAP` outside menu, `GFP`, `GGP`, `GHP` bare, `FCA`, `FCB`, `PR`, `?MUT` long form (gets `R` ACK only), `?FL`/`?PWR`/`?VOL`/`?FN` long forms, `?L`/`?S`/`?R`/`?AST`, `?STA`–`?STP` family (only `?STH` returns `R`) |
+| ❌ Rejected (FN codes not implemented on HMx) | `04FN`, `05FN`, `06FN`, `10FN`, `15FN`, `19FN`, `25FN`, `33FN`, `41FN`, `46FN`, `47FN`, `48FN`, `49FN`, `50FN` |
+| ⏭️ Not tested | `PF`, `PO`, all `PB` (except `31PB` verified), all `CDP`, `FU`/`FD`, `NNNNNGGP` scroll, `30PB` enter |
 
 ---
 
@@ -250,6 +334,8 @@ Likely mapping (Pioneer proprietary, not fully decoded):
 
 ## Python Control Example
 
+For one-shot queries (single connection, single command):
+
 ```python
 import socket, time
 
@@ -267,11 +353,49 @@ def pioneer_cmd(host, cmd, port=8102):
     s.close()
     return resp.decode('latin1', 'replace').strip()
 
-# Examples
+# Examples (verified working on X-HM72)
 print(pioneer_cmd('192.168.1.12', '?P'))    # PWR0
-print(pioneer_cmd('192.168.1.12', '?V'))    # VOL000
-print(pioneer_cmd('192.168.1.12', 'VU'))    # Volume Up
-print(pioneer_cmd('192.168.1.12', '25FN'))  # Switch to Internet Radio
+print(pioneer_cmd('192.168.1.12', '?V'))    # VOL005
+print(pioneer_cmd('192.168.1.12', 'VU'))    # Volume up (status pushed)
+print(pioneer_cmd('192.168.1.12', '38FN'))  # Switch to Internet Radio
+```
+
+For interactive use (browsing the menu, watching events), keep one
+persistent connection and demultiplex incoming lines:
+
+```python
+import socket, time, re
+
+s = socket.socket()
+s.settimeout(8)
+s.connect(('192.168.1.12', 8102))
+
+def send_and_collect(cmd, wait=1.5):
+    s.send((cmd + '\r\n').encode())
+    time.sleep(wait)
+    s.settimeout(0.8)
+    buf = b''
+    try:
+        while True:
+            chunk = s.recv(2048)
+            if not chunk: break
+            buf += chunk
+    except socket.timeout: pass
+    return buf.decode('latin1','replace').strip()
+
+# Switch to Media Server and walk the top menu
+print(send_and_collect('44FN', wait=3))             # FN44 + initial menu push
+state = send_and_collect('?GAP')                    # full menu state
+print(state)
+# Parse GEP entries:
+for m in re.finditer(r'GEP\d{2}\d{3}"([^"]*)"', state):
+    print('  item:', m.group(1))
+
+# Open first item, then go back
+print(send_and_collect('00001GHP'))
+print(send_and_collect('31PB'))
+
+s.close()
 ```
 
 ---
@@ -361,3 +485,32 @@ set cne/PioTunnelingControlService/EnabledQueryExAPI 1
 This flips the gate from `0` to `1` and might unlock the iControlAV API for
 new connections. **Not yet attempted on the live device** — could affect
 existing services or require a reboot to take effect.
+
+---
+
+## Sources
+
+Command **names** were extracted from this firmware binary (constant pool at
+file offset `0x0015a3e0`, GUI query handlers from `0x00017158`). Command
+**semantics** were inferred from publicly documented Pioneer VSX-series
+protocol references and then cross-checked against the X-HM72 live:
+
+- [schaffman5 / VSX-1022_Commands](https://github.com/schaffman5/VSX-1022_Commands/blob/master/Pioneer_VSX-1022_Commands_2012.txt)
+  — GUI menu protocol (`?GAP` + `GBP`/`GCP`/`GDP`/`GEP`, `NNNNNGHP`,
+  `NNNNNGGP`) — verified working on X-HM72 with the live-tested examples
+  shown above.
+- [Arno Welzel — Control AV receivers by Pioneer over the network](https://arnowelzel.de/en/control-av-receivers-by-pioneer-over-the-network)
+  — basic protocol overview, `R\r\n` heartbeat (verified on X-HM72).
+- [Mike Poulson — Programmatically Controlling Pioneer Receivers](https://blog.mikepoulson.com/2011/06/programmatically-controlling-pioneer.html)
+  — mute semantics (`MO`=mute on, `MF`=mute off, `MUT0`=muted).
+- [crowbarz / ha-pioneer_async issue #95](https://github.com/crowbarz/ha-pioneer_async/issues/95)
+  — VSX-528 reverse-engineering: model-specific FN-code variations, ACK-only
+  command list (much of this **does not apply** to X-HM72; testing showed
+  most of the ACK-only commands are completely silent on this model).
+
+**X-HM72-specific divergence from VSX-series docs (live-tested):**
+- `?MUT`/`?PWR`/`?VOL`/`?FN` long forms — not implemented (silent or `R` ACK only).
+- `?L`/`?S`/`?R`/`?AST`/`BAUP`/`BADN`/etc. tone controls — silent.
+- Many `FNxx` codes referenced in firmware are silently rejected — only
+  9 of 21 candidates actually switch the input.
+- FN codes 44, 45, 51, 56 differ from VSX naming (see verified table).

@@ -124,34 +124,37 @@ Test method: send `##FN`, wait 2.5s, drain pushes, query `?F`. The device pushes
 
 | Command | Function | Verified |
 |---------|----------|----------|
-| `FU` | Function Up — cycle to next input | not tested |
-| `FD` | Function Down — cycle to previous input | not tested |
+| `FU` | Function Up — cycle to next input | ❌ no effect on X-HM72 (5× FU → input unchanged at FN45) |
+| `FD` | Function Down — cycle to previous input | ❌ no effect on X-HM72 (5× FD → input unchanged) |
+
+Both commands are accepted (no error) but the input does not advance.
+Use `##FN` with an explicit code to switch inputs.
 
 ### Playback (PB commands)
 Commands sent while in a playback source. Exact meaning depends on current input.
 
-| Command | Likely Meaning |
-|---------|----------------|
-| `10PB` | Play |
-| `11PB` | Pause |
-| `12PB` | Stop |
-| `13PB` | Skip Forward / Next |
-| `14PB` | Skip Back / Prev |
-| `15PB` | FF |
-| `18PB` | Rewind |
-| `20PB` | Menu/Home |
-| `26PB` | Up |
-| `27PB` | Down |
-| `28PB` | Left |
-| `29PB` | Right |
-| `30PB` | Enter/OK |
-| `31PB` | Return/Back |
-| `32PB` | Shuffle |
-| `36PB` | Repeat |
-| `37PB` | Add to Favorites |
-| `39PB` | ? |
-| `40PB` | ? |
-| `41PB` | ? |
+| Command | Meaning | Verified |
+|---------|---------|----------|
+| `10PB` | Play | not tested |
+| `11PB` | Pause | not tested |
+| `12PB` | Stop | ✅ Stopped Internet Radio stream — GCP screen-flags transition `02→06→02` with metadata bit cleared, time counter stops |
+| `13PB` | Skip Forward / Next | not tested |
+| `14PB` | Skip Back / Prev | not tested |
+| `15PB` | FF | not tested |
+| `18PB` | Rewind | not tested |
+| `20PB` | Menu/Home | not tested |
+| `26PB` | Up | not tested |
+| `27PB` | Down | not tested |
+| `28PB` | Left | not tested |
+| `29PB` | Right | not tested |
+| `30PB` | Enter/OK | ⚠️ Triggers playback-screen transition in iRadio Favorites, but does **not** open the highlighted item — device falls back to its last/default stream. Effectively no useful action on flat preset lists. |
+| `31PB` | Return/Back | ✅ Navigates from playback-screen back to list view; second `31PB` traverses up one folder level |
+| `32PB` | Shuffle | not tested |
+| `36PB` | Repeat | not tested |
+| `37PB` | Add to Favorites | not tested |
+| `39PB` | ? | not tested |
+| `40PB` | ? | not tested |
+| `41PB` | ? | not tested |
 
 ### CD Player (CDP)
 | Command | Meaning |
@@ -222,7 +225,48 @@ Field meanings:
 | `GBPnn` | `nn` = 2-digit count of currently-shown entries |
 | `GCPwwxy0z0"label"` | `ww` = screen type (2 digits); `x` = list-update flag; `y` = top-menu-key-enabled; `z` = return-key-enabled. Label in quotes is the screen name |
 | `GDPaaaaabbbbbccccc` | `aaaaa` = start index (5-digit), `bbbbb` = end index, `ccccc` = total count |
-| `GEPnnxxx"label"` | `nn` = display-row position; `xxx` = entry flags (e.g. `101` = highlighted, `001` = unhighlighted, `102`/`002` indicate playable list items) |
+| `GEPnnxxx"label"` | `nn` = display-row position; `xxx` = entry flags — meaning depends on screen type (see decode tables below) |
+
+**`GCP` screen-type field** (first 2 digits — live-observed values):
+
+| `ww` | Screen Type | Description |
+|------|-------------|-------------|
+| `00` | Error / empty | Placeholder state ("Track Not Found" or unset) |
+| `01` | List menu | Browseable list — folders, presets, search results |
+| `02` | Now Playing | Active playback view, metadata fields in GEP entries |
+| `06` | Connecting | Transition state during stream open/buffer/stop |
+
+**`GEP` entry flags — when on a list screen (`GCP01...`)**:
+
+The 3-digit `xxx` decomposes as `H_T` where:
+- 1st digit **H** = highlight: `1` = cursor on this row, `0` = not highlighted
+- 2nd digit always `0` in observed data (reserved / line-style?)
+- 3rd digit **T** = item type: `1` = container/folder (enter with GHP), `2` = playable leaf (preset/track)
+
+| Flag | Meaning | Example |
+|------|---------|---------|
+| `001` | Folder, not highlighted | "Bilder", "Filme" inside Fritzbox |
+| `101` | Folder, highlighted | "Fritzbox", "Musik" (cursor on it) |
+| `002` | Playable item, not highlighted | "SWR3" radio preset |
+| `102` | Playable item, highlighted | "DASDING 90.8" (cursor on it) |
+| `000` | Empty / error | Used in error screens (`GCP00…`) |
+
+**`GEP` entry flags — when on Now Playing (`GCP02...` or `GCP06...`)**:
+
+GEP rows are no longer list items; each row carries a specific metadata
+field. The 3-digit code identifies the field, not highlight/type.
+
+| Flag | Metadata field | Sample value |
+|------|----------------|--------------|
+| `020` | Track / song title | `"BRUNO MARS - MARRY YOU"` |
+| `021` | Artist / station name | `"Antenne 1"` |
+| `022` | Album | (often empty for streams) |
+| `023` | Elapsed time | `"1:19"` |
+| `026` | Codec | `"mp3"` |
+| `028` | (unknown — often empty) | |
+| `029` | Bitrate | `"128kbps"` |
+| `032` | Title (transition state seen during open) | |
+| `034` | Total time | `"0:00"` for live streams |
 
 **Live example — Internet Radio Favorites (`45FN`)**:
 ```
@@ -243,10 +287,24 @@ GEP08002"181.fm - Christmas Classics"
 
 | Command | Function | Verified |
 |---------|----------|----------|
-| `NNNNNGHP` | Select & open list item at index NNNNN (5-digit zero-padded) | ✅ `00001GHP` opened Fritzbox sub-menu |
-| `31PB` | Back / return to parent | ✅ navigated back from sub-menu to top |
-| `30PB` | Enter / confirm | not tested |
-| `NNNNNGGP` | Scroll to row NNNNN | not tested |
+| `NNNNNGGP` | Move highlight to **absolute list index** NNNNN. Cursor moves, window auto-scrolls if needed, list does NOT open | ✅ `00005GGP` highlighted SWR3 (item 5), `00006GGP` highlighted DASDING (item 6), `00008GGP` highlighted 181.fm Christmas Classics (item 8). Out-of-range silently rejected. |
+| `NNNNNGHP` | Select & open list item at **absolute** index NNNNN | ✅ on hierarchical menu (Media Server → Fritzbox folder); ❌ on flat preset list (Favorites) — see caveat below |
+| `30PB` | Enter / confirm | ⚠️ Triggers playback-screen transition in iRadio Favorites but does NOT change the active stream (see PB table) |
+| `31PB` | Back / return to parent | ✅ navigates back from playback to list, and up one folder level |
+
+**Critical caveat — GHP on flat preset lists (X-HM72):**
+
+`NNNNNGHP` opens hierarchical menu items (folders, DLNA directories) but
+does **not** switch between flat Favorites/iRadio preset entries on this
+device. Test: with cursor on DASDING (item 6) and `00006GHP` sent, the
+device transitioned to Now Playing screen but resumed its last/default
+stream (Antenne 1), not DASDING. Same behavior for `00001GHP`, `00003GHP`,
+`00005GHP`, `30PB` Enter.
+
+Streams in the Favorites flat-list appear to be controllable only via the
+gated **iControlAV5 Extended Query API** (`EnabledQueryExAPI=1`), which is
+off by default. The basic protocol can browse the favourites list and
+trigger playback of the *current* selection but cannot move the selection.
 
 **Live example — drilling into a folder:**
 
@@ -291,11 +349,13 @@ decoded. Not tested live to avoid disrupting playback.
 | Status | Commands |
 |--------|----------|
 | ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK`, `?GAP` (in menu context) |
-| ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGHP` select-and-open, `31PB` back |
+| ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGGP` scroll-cursor-to-index, `NNNNNGHP` select-and-open (hierarchical menus only), `12PB` Stop, `31PB` back |
 | ⚠️ State toggles but display unchanged | `MF`, `MO` (`?M` flips between MUT0/MUT1 as expected, but front panel shows no MUTE indicator — audio effect unverified) |
+| ⚠️ Triggers screen transition but no useful effect | `30PB` Enter on Favorites preset list (transitions to playback screen but device resumes default stream, not highlighted item) |
+| ❌ No effect | `FU`, `FD` (Function up/down — input does not advance) |
 | ❓ No response on HMx | `?RGC`, `?GIA`, `?GAP` outside menu, `GFP`, `GGP`, `GHP` bare, `FCA`, `FCB`, `PR`, `?MUT` long form (gets `R` ACK only), `?FL`/`?PWR`/`?VOL`/`?FN` long forms, `?L`/`?S`/`?R`/`?AST`, `?STA`–`?STP` family (only `?STH` returns `R`) |
 | ❌ Rejected (FN codes not implemented on HMx) | `04FN`, `05FN`, `06FN`, `10FN`, `15FN`, `19FN`, `25FN`, `33FN`, `41FN`, `46FN`, `47FN`, `48FN`, `49FN`, `50FN` |
-| ⏭️ Not tested | `PF`, `PO`, all `PB` (except `31PB` verified), all `CDP`, `FU`/`FD`, `NNNNNGGP` scroll, `30PB` enter |
+| ⏭️ Not tested | `PF`, `PO`, `10PB` (Play), `11PB` (Pause), `13PB`–`18PB` (Skip/FF/Rewind), `20PB` (Menu/Home), `26PB`–`29PB` (cursor up/down/left/right), `32PB`–`41PB` (Shuffle/Repeat/Fav/?), all `CDP` |
 
 ---
 

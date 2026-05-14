@@ -86,7 +86,9 @@ FN52   → Input: LineIn2
 | Command | Response | Description |
 |---------|----------|-------------|
 | `?F` | `FN##` | Query current input (see table below) |
-| `##FN` | — | Set input to ## |
+| `##FN` | — | Set input to specific source (see table) |
+| `FU` | — | Function Up — cycle to next input |
+| `FD` | — | Function Down — cycle to previous input |
 
 **Input Function Codes (`##FN`):**
 
@@ -181,6 +183,17 @@ or pure side-effect command).
 | `?RGF` | `RGF<64-char bitfield>` | ✅ | Remote feature capabilities |
 | `?RGC` | — | — | Remote config? (no response on HMx) |
 
+### Status / Station Query API (`?STA` – `?STP`)
+
+A separate command table at firmware offset `0x00017158` defines a family of
+16 status/state queries: `?STA`, `?STB`, `?STC`, `?STD`, `?STE`, `?STF`,
+`?STG`, `?STH`, `?STI`, `?STJ`, `?STK`, `?STL`, `?STM`, `?STN`, `?STO`, `?STP`.
+
+Each command has its own ~316-byte handler block. These were likely used by
+the official remote app to read structured device state (currently playing
+track, station metadata, browse list state, etc.) — exact semantics not yet
+decoded. Not tested live to avoid disrupting playback.
+
 ---
 
 ## Verified Command Status (live test on XC-HM72, firmware 1.010)
@@ -271,3 +284,80 @@ This means:
 1. Commands that control audio hardware (volume, mute, input) → forwarded to Pioneer CPU
 2. Commands for network streaming (NSC, NSK) → handled by DM870 directly
 3. Response echoes like `NSC\r\n` = DM870 acknowledgment; actual Pioneer CPU responses have data (e.g. `VOL000`)
+
+---
+
+## Two Pioneer Services on Port 8102
+
+The firmware exposes **two different Pioneer service implementations** on the
+same TCP port — both reachable via the PioTunneling tunnel:
+
+| Service (firmware class) | Purpose | Status |
+|--------------------------|---------|--------|
+| `Pio_ControlAppService`  | Basic RS-232C-style protocol (`MO`/`MF`/`##FN`/`?V`, etc.) — everything documented above | ✅ Always active |
+| `Pio_iControlAvService`  | Rich app-facing API: favorites, browse, UPnP search, album art, seek, playscreen timer | ⚠️ Gated by `EnabledQueryExAPI=0` |
+
+The `Pio_iControlAvService` is the implementation behind the (now-defunct)
+official Pioneer **iControlAV5** iOS/Android app. The firmware contains the
+service code, but the Extended Query API is disabled by default. The error
+string `cpPioTunnelingControlService->QueryEx returns false.` (at firmware
+offset `0x000184a6`) confirms the gating.
+
+### iControlAV5 Action Vocabulary (internal IDs from firmware)
+
+```
+ICAV_CAPP_ADD_FAV          — Add current source/track to favourites
+ICAV_CAPP_REMOVE_FAV       — Remove from favourites
+ICAV_CAPP_BROWSE_INFO      — Get menu / browse list info
+ICAV_CAPP_UPNP_SEARCH      — Trigger UPnP search for content
+ICAV_CAPP_SEEK             — Seek within a track
+ICAV_CAPP_DISP_QUALIFIED   — Display refinement query
+ICAV_CAPP_SELECT_TOTAL     — Confirm a selection
+ICAV_CAPP_PLAYSCREENTIMER  — Play-screen timer event
+ICAV_ALBUMART_INFO_ACTIVE  — Album art info, active
+ICAV_ALBUMART_INFO_PASSIVE — Album art info, passive
+```
+
+These are C++ enum / log-tag names found in the firmware. The TCP command
+syntax that maps to each (e.g. `?XFAV`, `XADDF`, etc.) is **not yet decoded**
+— would require the original app APK or a packet capture from when the app
+was still functional.
+
+### ControlApp Key Code Vocabulary (`eIEKC_CApp_*`)
+
+Internal key codes used by `Pio_ControlAppService` to dispatch incoming
+network commands to the audio system. Each maps to a 1-byte IR key code on
+the Pioneer host CPU side (e.g. `MuteOn = 0xA6`, `MuteOff = 0xA7`):
+
+```
+PowerOn / PowerOff / PowerStatus
+VolumeUp / VolumeDown / VolumeValue        (set specific volume, not only up/down)
+MuteOn / MuteOff / MuteStatus
+InputToggle / InputReverse / InputStatus / InputInformation
+PlaybackStatus / Play / Pause / Stop / Next / Previous / Random / Repeat
+Ok / TopMenu / Cancel
+LikeIt / Favorites / AlbumArtInfo / GenerationStatus / IPodCtrlKeyInfo
+PB_CD_Play / PB_CD_Pause / PB_CD_Stop / PB_CD_Next / PB_CD_Previous
+ListeningmodeAuto / ListeningmodeAdvsurr / ListeningmodeAlc / ListeningmodeEcomode
+
+Per-input keys: CD, DVD, BD, DVR, TV, SAT, Video, Game, Line, AudioIn,
+                Tuner, IRadio, IPodDock, IPodUSB, HOSTBT (Bluetooth),
+                MServer, MHL, HDMI1, Pandora, Adapterport
+```
+
+Total: 59 named key codes. Most map 1-to-1 to a basic protocol command we
+already documented (e.g. `MuteOn` ↔ `MO`, `VolumeUp` ↔ `VU`). The richer
+ones (`VolumeValue`, `LikeIt`, `Favorites`, `ListeningmodeXxx`) suggest the
+basic protocol can do more than the visible verb names imply, but the TCP
+command syntax for them isn't documented.
+
+### Enabling the Extended API (untested, potentially risky)
+
+From the BridgeCo debug shell on port 9000:
+```
+set cne/PioTunnelingControlService/EnabledQueryExAPI 1
+```
+
+This flips the gate from `0` to `1` and might unlock the iControlAV API for
+new connections. **Not yet attempted on the live device** — could affect
+existing services or require a reboot to take effect.

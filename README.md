@@ -163,22 +163,44 @@ Port1 / Port2 / Port3 / Port4
 
 ## Files
 
+### Documentation
+
 | File | Description |
 |---|---|
-| `decrypt_fw.py` | Decrypt `.fw` file → raw binary (bring your own firmware) |
-| `nand_dump.py` | NAND dumper via SDS shell + XMODEM (any flash region) |
-| `extract_html.py` | Extract embedded web UI from decrypted firmware → `webui/` |
-| `wml11b.c` | Public domain bCoD format reference parser |
-| `webui/` | 51 extracted HTML/ASP pages with their real firmware paths |
-| `ANALYSIS.md` | Detailed technical analysis |
-| `PORT_8102_PROTOCOL.md` | Pioneer IP Remote protocol (volume, input, power control) |
-| `PORT_9000_SHELL.md` | BridgeCo SDS debug shell (filesystem, threads, NAND access) |
-| `APP_PROTOCOL.md` | ControlApp 4.1.0 command class hierarchy + receive tags |
-| `WEB_INTERFACE.md` | HTTP server analysis (port 80 + port 8080) |
-| `FAVORITES.md` | Direct-edit favorites via SDS (vTuner workaround using FritzBox DLNA proxy) |
-| `tools/{sds,p8102,fav_add,fav_backup}.py` | Live test + edit tools |
+| `ANALYSIS.md` | Full firmware analysis: bCoD format, cipher derivation, NAND layout, KPA |
+| `PORT_8102_PROTOCOL.md` | Pioneer IP Remote protocol — volume, input, playback, menu, favorites (with status: ✅ live-verified / ⏭ untested) |
+| `PORT_9000_SHELL.md` | BridgeCo SDS debug shell — command reference, SDS filesystem tree, port map, threads, NAND read via `fburn` |
+| `APP_PROTOCOL.md` | ControlApp 4.1.0 command class hierarchy (`CommandBase` → `CommandHiMicro`), full send/receive command list, JS source references |
+| `WEB_INTERFACE.md` | HTTP server on port 80 — goform handlers, ASP-page inventory, remote-control form schema |
+| `FAVORITES.md` | Edit favorites directly via SDS (vTuner is dead — workaround uses FritzBox DLNA proxy as resolver) |
 
-Binary files (firmware dumps, decrypted images) are excluded from this repo — bring your own device/firmware.
+### Scripts (offline — operate on firmware/dump files)
+
+| File | Description |
+|---|---|
+| `decrypt_fw.py` | Decrypt a `.fw` file → raw binary using the embedded Blowfish key + XOR mask |
+| `nand_dump.py` | Dump arbitrary NAND regions via the port 9000 `fburn` command + XMODEM-CRC16 |
+| `extract_html.py` | Pull the embedded web UI out of the decrypted firmware → `webui/` |
+| `wml11b.c` | Public domain bCoD container parser — reference for field offsets |
+
+### Tools (online — talk to a running device on the LAN)
+
+| File | Description |
+|---|---|
+| `tools/p8102.py` | Port 8102 tester — send commands, listen for async pushes with timestamps |
+| `tools/sds.py` | Port 9000 SDS shell wrapper — handles the per-character autocomplete echo |
+| `tools/fav_backup.py` | Trace `cne/Favourites/` linked list → `favourites_backup.json` |
+| `tools/fav_add.py` | Insert a favorite (`upnp` schema + FritzBox proxy URL) + auto-trigger parser reload |
+
+All tools default to `192.168.1.12` — edit `HOST` at the top to match your device.
+
+### Extracts
+
+| Path | Description |
+|---|---|
+| `webui/` | 51 ASP/HTML pages from the device's embedded web UI, paths preserved |
+
+Binary artifacts (firmware dumps, decrypted images, screenshots, the ControlApp APK) are excluded — bring your own.
 
 ---
 

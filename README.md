@@ -173,7 +173,10 @@ Port1 / Port2 / Port3 / Port4
 | `ANALYSIS.md` | Detailed technical analysis |
 | `PORT_8102_PROTOCOL.md` | Pioneer IP Remote protocol (volume, input, power control) |
 | `PORT_9000_SHELL.md` | BridgeCo SDS debug shell (filesystem, threads, NAND access) |
+| `APP_PROTOCOL.md` | ControlApp 4.1.0 command class hierarchy + receive tags |
 | `WEB_INTERFACE.md` | HTTP server analysis (port 80 + port 8080) |
+| `FAVORITES.md` | Direct-edit favorites via SDS (vTuner workaround using FritzBox DLNA proxy) |
+| `tools/{sds,p8102,fav_add,fav_backup}.py` | Live test + edit tools |
 
 Binary files (firmware dumps, decrypted images) are excluded from this repo — bring your own device/firmware.
 

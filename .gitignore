@@ -9,6 +9,9 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# Per-device favorites snapshot (contains vTuner session tokens)
+favourites_backup.json
+
 # Extracted firmware binaries
 extractions/
 

@@ -28,13 +28,6 @@ Response: <RESPONSE>\r\n
 
 No authentication, no handshake required. Connect and send immediately.
 
-While a TCP connection is open the device:
-1. Sends `R\r\n` ("ready") roughly every 30 seconds as a heartbeat
-2. Pushes unsolicited state updates when something changes — e.g. a volume
-   change at the device emits `VOLnnn`, an input change emits `FNnn`, a menu
-   refresh emits a full `GBP`/`GCP`/`GDP`/`GEP` block. A client should treat
-   incoming lines as either replies-to-our-command or push events.
-
 ```python
 import socket
 s = socket.socket()
@@ -61,17 +54,9 @@ FN52   → Input: LineIn2
 ### Power
 | Command | Response | Description |
 |---------|----------|-------------|
-| `?P` | `PWR0`/`PWR1`/`PWR2` | Query power state |
-| `PO` | — | Power On |
-| `PF` | — | Power Off / Standby |
-
-Power state codes (per Pioneer VSX RS-232C spec — model behaviour may vary):
-- `PWR0` = ON (operating)
-- `PWR1` = Cold standby (network off, only IR remote can wake)
-- `PWR2` = Network standby (network on, can be woken via `PO`)
-
-> The X-HM72 must have "Network Standby" enabled in its menu for `PO` to work
-> when the device is in standby. Otherwise the TCP socket is unreachable.
+| `?P` | `PWR0`/`PWR1` | Query power (0=on, 1=standby) |
+| `PF` | — | Power On |
+| `PO` | — | Power Standby (**caution**) |
 
 ### Volume
 | Command | Response | Description |
@@ -83,7 +68,7 @@ Power state codes (per Pioneer VSX RS-232C spec — model behaviour may vary):
 ### Mute
 | Command | Response | Description |
 |---------|----------|-------------|
-| `?M` (or `?MUT`) | `MUT0`/`MUT1` | Query mute. `MUT0` = muted, `MUT1` = not muted (per Pioneer VSX spec) |
+| `?M` | `MUT0`/`MUT1` | Query mute. `MUT0` = muted, `MUT1` = not muted |
 | `MO` | — | Mute MAIN zone (turn mute ON) |
 | `MF` | — | unMute MAIN zone (turn mute OFF) |
 
@@ -175,92 +160,21 @@ Commands sent while in a playback source. Exact meaning depends on current input
 
 ### Display / Status
 
-Commands marked ✅ verified responsive; — = empty response (may require menu
-context — many of these are GUI-list-related and only respond when the device
-is in a list-based source like Internet Radio, Media Server, iPod menu, etc.).
+Commands marked ✅ verified responsive; — = empty response (may be unimplemented on HMx
+or pure side-effect command).
 
 | Command | Response | Verified | Description |
 |---------|----------|----------|-------------|
-| `?GIA` | — | — | Get display string (likely menu-context dependent) |
+| `?GIA` | — | — | Get display string (no response on HMx) |
 | `?GIC` | `GIC000""` | ✅ | Get display info C |
-| `?GAP` | `GBP…GCP…GDP…GEP…` block | (in context) | **Get All Page** — returns the entire GUI menu state (see GUI Menu Protocol below) |
-| `?ICA` | `ICA0` / `ICA1` | ✅ | Icon status (`ICA1` = iPod/USB icon on, `ICA0` = off) |
-| `PR` | — | — | Preset? (no response on HMx — see Tuner Presets below for `NNPR`) |
-| `FCA`, `FCB`, `GFP`, `GGP`, `GHP` | — | — | When sent bare, no response. `GGP` / `GHP` are actually navigation commands with a prefix — see below |
-
-### GUI Menu Protocol (`?GAP` / `GBP` / `GCP` / `GDP` / `GEP` / `GHP` / `GGP`)
-
-This is the protocol the official Pioneer remote app used to navigate menus,
-browse radio stations, and select tracks. Active when the device is in a
-list-based source (Internet Radio `25FN`, Media Server, iPod, Pandora,
-Favorites). Documented in the [Pioneer VSX-1022 RS-232C spec](https://github.com/schaffman5/VSX-1022_Commands/blob/master/Pioneer_VSX-1022_Commands_2012.txt).
-
-**Query the current menu state:**
-```
-?GAP
-```
-The device responds with a block of status lines:
-```
-GBPnn                                — list size (nn = number of displayed entries)
-GCPwwxy0z0"SCREEN_LABEL"             — screen header
-GDPaaaaabbbbbccccc                   — display range and total count
-GEPnnxxx"LABEL"                      — entry n, repeated for each item
-GEPnnxxx"LABEL"
-...
-```
-
-| Code | Meaning |
-|------|---------|
-| `GBPnn` | `nn` = zero-padded count of GEP entries currently shown |
-| `GCPwwxy0z0"label"` | `ww` = screen type (00–99); `x` = hierarchical-list-update flag (0/1); `y` = top-menu-key-enabled (0/1); `z` = return-key-enabled (0/1); `"label"` = current screen name |
-| `GDPaaaaabbbbbccccc` | `aaaaa` = start index of shown range; `bbbbb` = end index; `ccccc` = total entry count (all 5-digit zero-padded). Example: `GDP000010000800031` = entries 1–8 of 31 |
-| `GEPnnxxx"label"` | One entry. `nn` = display row (01–08 typically); rest = entry metadata + label |
-
-**Navigation commands** (5-digit zero-padded item index + suffix):
-
-| Command | Function |
-|---------|----------|
-| `NNNNNGHP` | **Select** list item at index NNNNN (`00002GHP` = pick item 2) |
-| `NNNNNGGP` | **Scroll** to position NNNNN (`00050GGP` = jump to row 50) |
-| `30PB` | Enter key (confirm selection) |
-| `31PB` | Return / back key (go up one level) |
-
-**Example: navigate Internet Radio favorites**
-```
-25FN          → switch to Internet Radio
-?GAP          → device returns GBP04 GCP01... GDP000010000400015 GEP01... GEP02... etc.
-00003GHP      → highlight item 3
-30PB          → enter (open station / play)
-31PB          → back to parent list
-```
-
-The Internet Radio source on this device sends `R\n` heartbeats every ~30
-seconds while connected; menu state updates are pushed asynchronously when
-the device's UI changes.
-
-### Tuner Presets
-
-| Command | Function |
-|---------|----------|
-| `NNPR` | Recall tuner preset NN (01–30). Example: `05PR` = preset 5 |
-
-The X-HM72 has FM/AM/DAB tuners — these are reached via `02FN` (Tuner) and
-preset slots are populated via the front panel or via the iControlAV app's
-favorites-management commands (not yet decoded for direct TCP use).
-
-### Listening Modes (`NNNNSR`)
-
-4-digit zero-padded code followed by `SR`. Per Pioneer VSX-1022 spec:
-
-| Command | Mode |
-|---------|------|
-| `0005SR` | Auto / Direct |
-| `0010SR` | ALC / Standard |
-| `0100SR` | Advanced Surround |
-
-The X-HM72 is a 2-channel stereo so most surround modes don't apply — `0010SR`
-(Standard) is the expected default. Other 4-digit codes likely exist for
-Stereo, Pure Audio, etc. (model-dependent).
+| `?GAP` | — | — | Get something (no response on HMx) |
+| `GFP` | — | — | Get FP (no response on HMx) |
+| `GGP` | — | — | Get GP (no response on HMx) |
+| `GHP` | — | — | Get HP (no response on HMx) |
+| `?ICA` | `ICA0` | ✅ | Icon status |
+| `FCA` | — | — | Function A (no response on HMx) |
+| `FCB` | — | — | Function B (no response on HMx) |
+| `PR` | — | — | Preset? (no response on HMx) |
 
 ### Device Info
 | Command | Response | Verified | Description |
@@ -404,21 +318,10 @@ ICAV_ALBUMART_INFO_ACTIVE  — Album art info, active
 ICAV_ALBUMART_INFO_PASSIVE — Album art info, passive
 ```
 
-These are C++ enum / log-tag names found in the firmware. Most of the
-"missing" functionality these names hint at is actually exposed through the
-standard menu/GUI protocol documented above (`?GAP` + `NNNNNGHP` + `30PB`):
-- `ADD_FAV` / `REMOVE_FAV` are reachable as menu actions when the device
-  is in the "Favorites" input (`45FN`) or in Internet Radio context — the
-  app sent a `30PB` (enter) on the right menu entry.
-- `BROWSE_INFO` corresponds to `?GAP` returning the full screen state.
-- `UPNP_SEARCH` is triggered by navigating into Media Server (`44FN`) and
-  selecting the search entry.
-- `SEEK` is `30PB` on a playback screen with a specific time index.
-
-So the iControlAV5 app didn't need a separate command vocabulary for these
-features — it built them on top of the GUI menu protocol. The `EnabledQueryExAPI`
-gate likely controls **passive metadata streaming** (album art retrieval,
-high-frequency status pushes) rather than action invocation.
+These are C++ enum / log-tag names found in the firmware. The TCP command
+syntax that maps to each (e.g. `?XFAV`, `XADDF`, etc.) is **not yet decoded**
+— would require the original app APK or a packet capture from when the app
+was still functional.
 
 ### ControlApp Key Code Vocabulary (`eIEKC_CApp_*`)
 
@@ -458,27 +361,3 @@ set cne/PioTunnelingControlService/EnabledQueryExAPI 1
 This flips the gate from `0` to `1` and might unlock the iControlAV API for
 new connections. **Not yet attempted on the live device** — could affect
 existing services or require a reboot to take effect.
-
----
-
-## Sources
-
-Command-name extraction came from this firmware (`HMx2015APP1010.fw`).
-Command **semantics** were sourced from publicly documented Pioneer VSX-series
-RS-232C/IP protocol references, then cross-checked against the X-HM72's
-behaviour where safely testable:
-
-- [Arno Welzel — "Control AV receivers by Pioneer over the network"](https://arnowelzel.de/en/control-av-receivers-by-pioneer-over-the-network)
-  — basic protocol overview, heartbeat behaviour, input/volume/mute commands
-- [Pioneer VSX-1022 Commands (schaffman5/VSX-1022_Commands)](https://github.com/schaffman5/VSX-1022_Commands/blob/master/Pioneer_VSX-1022_Commands_2012.txt)
-  — definitive GUI menu protocol (`?GAP` / `GBP` / `GCP` / `GDP` / `GEP` /
-  `NNNNNGHP` / `NNNNNGGP`), tuner presets (`NNPR`), listening modes (`NNNNSR`)
-- [Mike Poulson — "Programmatically Controlling Pioneer Receivers"](https://blog.mikepoulson.com/2011/06/programmatically-controlling-pioneer.html)
-  — mute command semantics
-- [crowbarz/ha-pioneer_async #95 — VSX-528 reverse-engineering](https://github.com/crowbarz/ha-pioneer_async/issues/95)
-  — `R` heartbeat, ACK-only commands list, model-specific FN-code variations
-
-The X-HM72 may diverge from the VSX-series in detail (e.g. its FN code 45 is
-likely Spotify rather than Favorites because of firmware-side feature flags),
-so treat documented codes as the **starting point** and verify on the device
-when in doubt.

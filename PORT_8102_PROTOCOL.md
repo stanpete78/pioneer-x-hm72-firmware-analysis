@@ -66,8 +66,8 @@ FN52   → Input: LineIn2
 ### Power
 | Command | Response | Description |
 |---------|----------|-------------|
-| `?P` | `PWR0`/`PWR1` | Query power (0=on, 1=standby) |
-| `PF` | — | Power On |
+| `?P` | `PWR0`/`PWR1`/`PWR2` | Query power. `0` = On, `1` = Cold Standby, `2` = Network Standby (set per ControlApp `ReceivePowerStatus`) |
+| `PF` | — | Power On — works from `PWR1` Cold Standby; **does NOT reliably wake from `PWR2` Network Standby** (verified live: `PF` returned silently, PWR2 persisted) |
 | `PO` | — | Power Standby (**caution**) |
 
 ### Volume
@@ -150,11 +150,37 @@ Commands sent while in a playback source. Exact meaning depends on current input
 | `30PB` | Enter/OK | ⚠️ Triggers playback-screen transition in iRadio Favorites, but does **not** open the highlighted item — device falls back to its last/default stream. Effectively no useful action on flat preset lists. |
 | `31PB` | Return/Back | ✅ Navigates from playback-screen back to list view; second `31PB` traverses up one folder level |
 | `32PB` | Shuffle | not tested |
-| `36PB` | Repeat | not tested |
-| `37PB` | Add to Favorites | not tested |
+| `36PB` | Top Menu (gen2/3 UI; meaning on gen1/X-HM72 undecoded) | not tested |
+| `37PB` | Sort (per gen2/3 ControlApp UI). **NOT** "Add to Favorites" — that uses `NNNNNFCA` (see Favorites section below) | not tested |
+| `34PB`, `35PB` | Power-button related (gen2/3 UI) | not tested |
 | `39PB` | ? | not tested |
 | `40PB` | ? | not tested |
 | `41PB` | ? | not tested |
+
+### Favorites Management (`NNNNNFCA` / `NNNNNFCB`)
+
+Decoded from Pioneer ControlApp 4.1.0 source
+(`assets/AppendFiles/AppendedZipHtml.zip → nap/generation*/Detail.html`,
+function `TapEndFavoriteButtonInPopover`):
+
+| Command       | Function | Input context |
+|---------------|----------|---------------|
+| `NNNNNFCA`    | **Add** item N to Favorites | Any input ≠ 45 (e.g. `38FN` Internet Radio or `44FN` Music Server) |
+| `NNNNNFCB`    | **Remove** item N from Favorites | Must be on `45FN` Favorites |
+
+- `NNNNN` = 1-based, 5-digit zero-padded **absolute** index in the
+  current list (same convention as `GGP`/`GHP`).
+- Response format: `<tag><index><result>` (e.g. `FCB000131`).
+  Trailing digit appears to be a result flag — `1` = success,
+  `0` = no-op / rejected (observed on first attempt with stale state).
+- After a successful FCB the device emits an unsolicited screen update:
+  a 4-row "Favorite removed" placeholder screen followed by the new
+  Favorites list of length N-1.
+
+**Live-verified on X-HM72 (2026-05-14):** `00013FCB` removed item 13
+(`ByteFM`) from Favorites; list count went 13 → 12. `FCA` not
+verified live because vTuner backend is offline (cannot reach a
+non-favorited Internet Radio station to add).
 
 ### CD Player (CDP)
 | Command | Meaning |
@@ -349,7 +375,7 @@ decoded. Not tested live to avoid disrupting playback.
 | Status | Commands |
 |--------|----------|
 | ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK`, `?GAP` (in menu context) |
-| ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGGP` scroll-cursor-to-index, `NNNNNGHP` select-and-open (hierarchical menus only), `12PB` Stop, `31PB` back |
+| ✅ Confirmed effective state change | `VU`, `VD` (volume display verified by user), `01FN`/`02FN`/`17FN`/`38FN`/`44FN`/`45FN`/`51FN`/`52FN`/`56FN` (input switches with `FNnn` push confirmation), `NNNNNGGP` scroll-cursor-to-index, `NNNNNGHP` select-and-open (hierarchical menus only), `12PB` Stop, `31PB` back, `NNNNNFCB` remove favorite (verified 00013FCB → ByteFM removed) |
 | ⚠️ State toggles but display unchanged | `MF`, `MO` (`?M` flips between MUT0/MUT1 as expected, but front panel shows no MUTE indicator — audio effect unverified) |
 | ⚠️ Triggers screen transition but no useful effect | `30PB` Enter on Favorites preset list (transitions to playback screen but device resumes default stream, not highlighted item); `13PB`/`14PB` Skip (disconnect stream, do not move to next favorite) |
 | ❌ No effect | `FU`, `FD` (Function up/down — input does not advance), `10PB` Play (no-op from list and from active playback), `11PB` Pause (no-op on live Internet Radio streams — clock keeps ticking) |
@@ -611,6 +637,13 @@ protocol references and then cross-checked against the X-HM72 live:
   — VSX-528 reverse-engineering: model-specific FN-code variations, ACK-only
   command list (much of this **does not apply** to X-HM72; testing showed
   most of the ACK-only commands are completely silent on this model).
+- **Pioneer ControlApp 4.1.0** for Android
+  (`jp.pioneer.avsoft.android.controlapp`, 2016-02-10) —
+  embedded WebView UI extracted from
+  `assets/AppendFiles/AppendedZipHtml.zip`. Provides authoritative
+  command names and parameter formats via `basic/js/command.js`
+  and per-generation `Detail.html` files. See **[APP_PROTOCOL.md](APP_PROTOCOL.md)**
+  for the complete extracted reference.
 
 **X-HM72-specific divergence from VSX-series docs (live-tested):**
 - `?MUT`/`?PWR`/`?VOL`/`?FN` long forms — not implemented (silent or `R` ACK only).

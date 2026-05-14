@@ -17,3 +17,7 @@ screen_capture.bmp
 
 # Tool temp dirs
 .firecrawl/
+
+# Vendor app (Pioneer ControlApp 4.1.0 — copyright; do not distribute)
+*.apk
+controlapp_html/

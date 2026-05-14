@@ -40,10 +40,10 @@ GET /  →  301  →  /index.asp  →  JS redirect  →  /index.html
 ```javascript
 write_field_2(
   "s9784.5032.1010",  // firmware version
-  "<DEVICE_NAME>", // friendly name
+  "<DEVICE_NAME>",     // friendly name
   "1",                 // wifi enabled
-  "<WIFI_SSID>",          // SSID
-  "<DEVICE_MAC>", // MAC
+  "<WIFI_SSID>",       // SSID
+  "<DEVICE_MAC>",      // MAC
   "1",                 // DHCP on
   "192.168.1.12",      // IP
   "255.255.255.0",     // subnet

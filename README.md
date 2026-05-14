@@ -4,6 +4,12 @@ Reverse engineering of the Pioneer X-HM72 micro HiFi system firmware — decrypt
 
 The firmware encryption has been fully broken. This repo provides tools and documentation so others can inspect their own device firmware.
 
+> **Legal note**: This is interoperability research on a device the author owns.
+> Under EU Directive 2009/24/EC (implemented in German law as §69e UrhG), reverse
+> engineering for interoperability is permitted. The HTML pages in `webui/` are
+> excerpts of Pioneer firmware content shown for analysis context only — Pioneer
+> holds the copyright. The repo does not redistribute the firmware binary itself.
+
 **Device**: Pioneer X-HM72 (micro HiFi system, ~2015)
 **Firmware**: `HMx2015APP1010.fw` (v1.010, 2015-06-09)
 **Platform**: BridgeCo/SMSC DM870A — **ARM926EJ**, not MIPS as initially guessed

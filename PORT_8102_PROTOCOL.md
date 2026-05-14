@@ -553,10 +553,27 @@ change to the running protocol**:
 - `NNNNNGHP` / `30PB` on Favorites — still resume the device's internal
   default stream instead of switching to the highlighted preset
 
-Likely the flag is read at service start (boot), or the iControlAV5
-implementation is line-protocol-incompatible (binary/length-prefixed
-framing that we don't yet know). **A device reboot may be needed** to
-actually activate the Extended API; not attempted here.
+**Verified after full device reboot (2026-05-14):** The flag value
+persists across reboot (SDS write is non-volatile), and the service
+starts with `EnabledQueryExAPI=1`, but the behavior is **identical** to
+disabled state:
+
+- `?STA`–`?STP` family: 0 of 16 responsive
+- All speculative iControlAV5 command names: silent
+- `00004GHP` on Favorites with cursor on SWR1 → still opens Antenne 1
+  (the device's internal default stream), not the selected preset
+
+The flag is therefore **load-bearing only at the config-API surface** —
+flipping it does not activate the Extended API on this firmware. The
+iControlAV5 service code appears to be present in the binary
+(`Pio_iControlAvService` class, ICAV_* enum tags) but **not wired up to
+the running TCP service on X-HM72**. Possible additional gates:
+product-class check, license/regional check, or implementation simply
+removed from the X-HM72 firmware build despite leaving the config knob.
+
+**Bottom line:** Stream switching within a flat Favorites/iRadio preset
+list cannot be performed via the port-8102 protocol on this device.
+Use IR remote / front-panel knob for that operation.
 
 Per-X-HM72 SDS subtree for reference:
 ```

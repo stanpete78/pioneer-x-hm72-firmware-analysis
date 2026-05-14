@@ -571,9 +571,13 @@ the running TCP service on X-HM72**. Possible additional gates:
 product-class check, license/regional check, or implementation simply
 removed from the X-HM72 firmware build despite leaving the config knob.
 
-**Bottom line:** Stream switching within a flat Favorites/iRadio preset
-list cannot be performed via the port-8102 protocol on this device.
-Use IR remote / front-panel knob for that operation.
+**Bottom line:** Within a flat Favorites/iRadio preset list the protocol
+**can** move the cursor to any preset (`NNNNNGGP` works fully) and **can**
+report what's highlighted (`?GAP` returns the list with the `1xx`
+highlight flag), but it **cannot commit / activate the highlighted
+preset** — `GHP` and `30PB` transition to the playback screen and the
+device falls back to its internal last-active stream. Activating a
+different preset still requires the IR remote / front-panel knob.
 
 Per-X-HM72 SDS subtree for reference:
 ```

@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Backup the Favourites linked list from the X-HM72 SDS."""
 import json
+import os
 import re
 import sys
-import time
 
-sys.path.insert(0, '/Users/tim/Coding/Firmware_Analyser/Pioneer_X-HM72/tools')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sds import open_shell, cmd
+
+OUT_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "favourites_backup.json",
+)
 
 
 def parse_value(s):
@@ -55,7 +60,7 @@ def main():
             break
 
     snap = {"meta": meta, "content_list": visited, "free_list": free_chain}
-    with open("/Users/tim/Coding/Firmware_Analyser/Pioneer_X-HM72/favourites_backup.json", "w") as f:
+    with open(OUT_PATH, "w") as f:
         json.dump(snap, f, indent=2, ensure_ascii=False)
 
     print(f"Content list: {len(visited)} entries")

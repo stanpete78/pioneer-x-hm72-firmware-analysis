@@ -172,7 +172,7 @@ Port1 / Port2 / Port3 / Port4
 | `PORT_9000_SHELL.md` | BridgeCo SDS debug shell — command reference, SDS filesystem tree, port map, threads, NAND read via `fburn` |
 | `APP_PROTOCOL.md` | ControlApp 4.1.0 command class hierarchy (`CommandBase` → `CommandHiMicro`), full send/receive command list, JS source references |
 | `WEB_INTERFACE.md` | HTTP server on port 80 — goform handlers, ASP-page inventory, remote-control form schema |
-| `FAVORITES.md` | Edit favorites directly via SDS (vTuner is dead — workaround uses FritzBox DLNA proxy as resolver) |
+| `FAVORITES.md` | Edit favorites directly via SDS — vTuner is dead, so use any local UPnP/DLNA media server as the stream resolver |
 
 ### Scripts (offline — operate on firmware/dump files)
 
@@ -190,7 +190,7 @@ Port1 / Port2 / Port3 / Port4
 | `tools/p8102.py` | Port 8102 tester — send commands, listen for async pushes with timestamps |
 | `tools/sds.py` | Port 9000 SDS shell wrapper — handles the per-character autocomplete echo |
 | `tools/fav_backup.py` | Trace `cne/Favourites/` linked list → `favourites_backup.json` |
-| `tools/fav_add.py` | Insert a favorite (`upnp` schema + FritzBox proxy URL) + auto-trigger parser reload |
+| `tools/fav_add.py` | Insert a favorite (`upnp` schema + DLNA stream URL) + auto-trigger parser reload |
 
 All tools default to `192.168.1.12` — edit `HOST` at the top to match your device.
 

@@ -2,7 +2,7 @@
 
 Pioneer's vTuner backend is dead. Stock favorites resolve through it and all
 fall back to the last cached stream. Workaround: write favorites directly into
-the device's SDS using the FritzBox DLNA proxy as the resolver.
+the device's SDS using any UPnP/DLNA media server on the LAN as the resolver.
 
 ## SDS Layout
 
@@ -17,26 +17,27 @@ FirstFree             int — head of free list
 NumberOfEntries       int — content + free combined
 ```
 
-## Working Schema (upnp via FritzBox)
+## Working Schema (upnp via local DLNA server)
 
 ```xml
 <SongDescriptor ActiveAudioResource="0"
-                StationTitle="Soma Groove Salad"
+                StationTitle="Example Station"
                 SourceContentBrowser="upnp"
-                Artist="Soma Groove Salad"
+                Artist="Example Station"
                 LiveStream="">
-  <SongResource Url="http://192.168.1.1:49200/ST/AUDIO/DLNA-1-0/ice1.somafm.com/groovesalad-256-mp3"
-                Mime="mp3" Bps="256000" Fs="44100" BitsPerSample="16" Channels="2"
+  <SongResource Url="http://<dlna-server>:<port>/<dlna-path>"
+                Mime="mp3" Bps="128000" Fs="44100" BitsPerSample="16" Channels="2"
                 NoTimeSeek="" DLNA.ORG_OP="01"
                 DLNA.ORG_FLAGS="01700000000000000000000000000000"/>
 </SongDescriptor>
 ```
 
-URL pattern: `http://<fritzbox>:49200/ST/AUDIO/DLNA-1-0/<host>/<path>`. Station
-must already be configured under FritzBox → Heimnetz → Mediaserver →
-Internetradio.
+The URL must point to a DLNA `<res>` resource served by a UPnP MediaServer on
+the local network. Any DLNA server that proxies internet-radio streams works
+(e.g. a router with built-in media server, MiniDLNA, ReadyMedia, custom).
 
-`SourceContentBrowser="RadioNative"` requires a live vTuner — broken, don't use.
+`SourceContentBrowser="RadioNative"` requires a live vTuner backend — broken,
+don't use.
 
 ## Discover URL via UPnP
 
@@ -45,12 +46,14 @@ SOAP='<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/
 curl -s -H 'Content-Type: text/xml; charset="utf-8"' \
      -H 'SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"' \
      --data-binary "$SOAP" \
-     http://192.168.1.1:49000/MediaServer/ContentDirectory/Control
+     http://<dlna-server>:<control-port>/<ContentDirectory-control-url>
 ```
 
-Replace `<ObjectID>0</ObjectID>` with the Internetradio container ID, then with
-the station container ID. The `<res protocolInfo="...">URL</res>` in the final
-response is the proxy URL.
+Find the server's ContentDirectory control URL via SSDP discovery
+(`urn:schemas-upnp-org:service:ContentDirectory:1`). Recurse by replacing
+`<ObjectID>0</ObjectID>` with returned container IDs until you reach an
+`<item>` with a `<res protocolInfo="...">URL</res>` — that URL goes into the
+SongDescriptor.
 
 ## Tools
 
@@ -61,14 +64,15 @@ response is the proxy URL.
 | `tools/fav_backup.py` | Trace + JSON-backup the linked list |
 | `tools/fav_add.py` | Add favorite (writes upnp XML, fixes pointers, reloads parser) |
 
+All tools default to `HOST = 192.168.1.12` — edit to match your device's IP.
+
 ## Add a Favorite
 
 ```bash
-python3 tools/fav_backup.py                              # 1. snapshot
-python3 tools/fav_add.py "Soma Groove Salad" \           # 2. write + reload
-  "http://192.168.1.1:49200/ST/AUDIO/DLNA-1-0/ice1.somafm.com/groovesalad-256-mp3" \
-  256000
-python3 tools/p8102.py --wait 2 '?GAP'                   # 3. verify flag=102
+python3 tools/fav_backup.py                            # 1. snapshot
+python3 tools/fav_add.py "Station Name" \              # 2. write + reload
+  "http://<dlna-server>:<port>/<path>" 128000          #    Bps optional
+python3 tools/p8102.py --wait 2 '?GAP'                 # 3. verify flag=102
 ```
 
 Manual SDS sequence (when scripting fails):

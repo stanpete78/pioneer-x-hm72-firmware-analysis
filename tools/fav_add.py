@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """Add a working favorite to X-HM72 via direct SDS write.
 
-The Pioneer's native vTuner backend is dead, so we use the FritzBox DLNA proxy
-(SourceContentBrowser="upnp") which the device accepts as a playable stream.
+The Pioneer's native vTuner backend is dead, so we use the device's
+`SourceContentBrowser="upnp"` schema with a URL served by any local UPnP/DLNA
+media server. The device accepts those URLs as playable streams.
 
 Usage:
-    python3 fav_add.py "Station Name" <fritzbox-dlna-url> [bps]
+    python3 fav_add.py "Station Name" <dlna-stream-url> [bps]
 
-URL must be the FritzBox proxy URL:
-    http://192.168.1.1:49200/ST/AUDIO/DLNA-1-0/<host>/<path>
+URL must be a DLNA `<res>` URL served on the LAN — discover via UPnP browse
+(see FAVORITES.md).
 
-Discover URLs via UPnP browse (see FAVORITES.md) — or first add the station in
-the FritzBox web UI under "Heimnetz → Mediaserver → Internetradio".
+Set HOST = your device IP, DEVICE_PORT_8102 stays at 8102.
 """
+import os
 import socket
 import sys
 import time
 
-sys.path.insert(0, '/Users/tim/Coding/Firmware_Analyser/Pioneer_X-HM72/tools')
-from sds import open_shell, cmd
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sds import open_shell, cmd, HOST
 
 
 def parse_int(raw):
@@ -52,7 +53,7 @@ def trigger_reload():
     """Cycle input 44→45 via port 8102 so the device re-parses the favorites."""
     s = socket.socket()
     s.settimeout(3)
-    s.connect(('192.168.1.12', 8102))
+    s.connect((HOST, 8102))
     s.send(b'44FN\r\n')
     time.sleep(1.5)
     s.send(b'45FN\r\n')

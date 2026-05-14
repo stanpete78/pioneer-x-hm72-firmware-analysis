@@ -1,0 +1,10 @@
+# Firmware files (Pioneer copyright — do not distribute)
+*.fw
+*.zip
+*.bin
+*.png
+
+# Python cache
+__pycache__/
+*.pyc
+.DS_Store

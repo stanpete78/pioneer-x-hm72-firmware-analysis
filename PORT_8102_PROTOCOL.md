@@ -62,15 +62,19 @@ FN52   → Input: LineIn2
 | Command | Response | Description |
 |---------|----------|-------------|
 | `?V` | `VOL000`–`VOL185` | Query volume (0–185) |
-| `VU` | — | Volume Up |
-| `VD` | — | Volume Down |
+| `VU` | — | Volume Up — observed step size **+8** in one test, +1 in another; appears context-dependent |
+| `VD` | — | Volume Down — symmetric to `VU` |
 
 ### Mute
 | Command | Response | Description |
 |---------|----------|-------------|
-| `?M` | `MUT0`/`MUT1` | Query mute (0=off, 1=on) |
-| `MF` | — | Mute Off |
-| `MO` | — | Mute On |
+| `?M` | `MUT0`/`MUT1` | Query mute. `MUT0` = sound on (not muted), `MUT1` = muted |
+| `MF` | — | **Mute ON** (silence audio) — counter-intuitive name; verified by live test |
+| `MO` | — | **Mute OFF** (restore audio) — verified by live test |
+
+> Note: command names `MF`/`MO` are reversed from intuitive ("F"=oFF, "O"=On).
+> Pioneer's actual mapping was confirmed by toggling and observing `?M` state
+> changes — `MF` turns sound off, `MO` turns sound on.
 
 ### Input Function
 | Command | Response | Description |
@@ -147,25 +151,41 @@ Commands sent while in a playback source. Exact meaning depends on current input
 | `KOF` | — | Key Off |
 
 ### Display / Status
-| Command | Response | Description |
-|---------|----------|-------------|
-| `?GIA` | — | Get display string (no response) |
-| `?GIC` | `GIC000""` | Get display info C |
-| `?GAP` | — | Get something (no response) |
-| `GFP` | — | Get FP |
-| `GGP` | — | Get GP |
-| `GHP` | — | Get HP |
-| `?ICA` | `ICA0` | Icon status |
-| `FCA` | — | Function A |
-| `FCB` | — | Function B |
-| `PR` | — | Preset? |
+
+Commands marked ✅ verified responsive; — = empty response (may be unimplemented on HMx
+or pure side-effect command).
+
+| Command | Response | Verified | Description |
+|---------|----------|----------|-------------|
+| `?GIA` | — | — | Get display string (no response on HMx) |
+| `?GIC` | `GIC000""` | ✅ | Get display info C |
+| `?GAP` | — | — | Get something (no response on HMx) |
+| `GFP` | — | — | Get FP (no response on HMx) |
+| `GGP` | — | — | Get GP (no response on HMx) |
+| `GHP` | — | — | Get HP (no response on HMx) |
+| `?ICA` | `ICA0` | ✅ | Icon status |
+| `FCA` | — | — | Function A (no response on HMx) |
+| `FCB` | — | — | Function B (no response on HMx) |
+| `PR` | — | — | Preset? (no response on HMx) |
 
 ### Device Info
-| Command | Response | Description |
-|---------|----------|-------------|
-| `?RGD` | `RGD<001><XC-HM72/SYXE8><E0>` | Device ID / model info |
-| `?RGF` | `RGF<64-char bitfield>` | Remote feature capabilities |
-| `?RGC` | — | Remote config? |
+| Command | Response | Verified | Description |
+|---------|----------|----------|-------------|
+| `?RGD` | `RGD<001><XC-HM72/SYXE8><E0>` | ✅ | Device ID / model info |
+| `?RGF` | `RGF<64-char bitfield>` | ✅ | Remote feature capabilities |
+| `?RGC` | — | — | Remote config? (no response on HMx) |
+
+---
+
+## Verified Command Status (live test on XC-HM72, firmware 1.010)
+
+| Status | Commands |
+|--------|----------|
+| ✅ Confirmed working with documented response | `?P`, `?V`, `?M`, `?F`, `?GIC`, `?ICA`, `?RGD`, `?RGF`, `NSC`, `NSK` |
+| ✅ Confirmed effective state change | `VU`, `VD`, `MF`, `MO` |
+| ⚠️ Command labels reversed from doc | `MF` (= Mute On), `MO` (= Mute Off) |
+| ❓ No response, function unclear | `?RGC`, `?GIA`, `?GAP`, `GFP`, `GGP`, `GHP`, `FCA`, `FCB`, `PR` |
+| ⏭️ Not tested (would change user-facing state) | `PF`, `PO`, all `##FN`, all `PB`, all `CDP` |
 
 ---
 

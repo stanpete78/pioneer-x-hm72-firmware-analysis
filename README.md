@@ -116,13 +116,13 @@ The device runs an SDS shell on **TCP port 9000** (connect over LAN). The `fburn
 
 ```bash
 # Dump 64 KB CNE block (contains encryption keys)
-python3 nand_dump2.py 0 0x040000 0x10000 nand_cne.bin
+python3 nand_dump.py 0 0x040000 0x10000 nand_cne.bin
 
 # Dump bootloader (512 KB)
-python3 nand_dump2.py 0 0x000000 0x80000 nand_bootloader.bin
+python3 nand_dump.py 0 0x000000 0x80000 nand_bootloader.bin
 
 # Dump arbitrary region
-python3 nand_dump2.py <flash_id> <hex_addr> <hex_len> <output.bin>
+python3 nand_dump.py <flash_id> <hex_addr> <hex_len> <output.bin>
 ```
 
 **Requirements**: Device reachable at `192.168.1.12:9000` (edit `HOST`/`PORT` in the script). Device must be at the `sds://>` prompt — if stuck in a previous XMODEM transfer, send 3× `CAN` (0x18) bytes to abort.
@@ -166,10 +166,14 @@ Port1 / Port2 / Port3 / Port4
 | File | Description |
 |---|---|
 | `decrypt_fw.py` | Decrypt `.fw` file → raw binary (bring your own firmware) |
-| `nand_dump2.py` | Flexible NAND dumper via SDS shell + XMODEM |
-| `nand_dump.py` | Earlier NAND dumper (bootloader-specific) |
+| `nand_dump.py` | NAND dumper via SDS shell + XMODEM (any flash region) |
+| `extract_html.py` | Extract embedded web UI from decrypted firmware → `webui/` |
 | `wml11b.c` | Public domain bCoD format reference parser |
+| `webui/` | 51 extracted HTML/ASP pages with their real firmware paths |
 | `ANALYSIS.md` | Detailed technical analysis |
+| `PORT_8102_PROTOCOL.md` | Pioneer IP Remote protocol (volume, input, power control) |
+| `PORT_9000_SHELL.md` | BridgeCo SDS debug shell (filesystem, threads, NAND access) |
+| `WEB_INTERFACE.md` | HTTP server analysis (port 80 + port 8080) |
 
 Binary files (firmware dumps, decrypted images) are excluded from this repo — bring your own device/firmware.
 
@@ -186,7 +190,7 @@ Binary files (firmware dumps, decrypted images) are excluded from this repo — 
 
 ## License
 
-Original code in this repository (`decrypt_fw.py`, `nand_dump2.py`, `nand_dump.py`) is released under the **MIT License**.
+Original code in this repository (`decrypt_fw.py`, `nand_dump.py`, `extract_html.py`) is released under the **MIT License**.
 
 `wml11b.c` is public domain.
 

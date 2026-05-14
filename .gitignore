@@ -8,3 +8,12 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Extracted firmware binaries
+extractions/
+
+# Zero-byte capture artifacts
+screen_capture.bmp
+
+# Tool temp dirs
+.firecrawl/

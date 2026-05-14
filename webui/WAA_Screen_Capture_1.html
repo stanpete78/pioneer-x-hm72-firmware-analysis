@@ -1,0 +1,68 @@
+<html>
+<head>
+<title>WAA Screen Capture</title>
+ <STYLE type="text/css">
+  BODY { background: black; color: white}
+  A:link { color: red }
+  A:visited { color: red }
+  A:active { color: fuchsia }
+ </STYLE>
+
+</head>
+
+ <SCRIPT LANGUAGE="JavaScript">
+ <!--
+
+   RefreshInterval = 500; // 1 seconds
+   FetchCycle = new Boolean(true);
+   MyScreenBitmap = new Image();
+   CycleCount = 0;
+
+  function FetchImage()
+  {
+    var now = new Date();
+    MyScreenBitmap.src = "screen_capture2.bmp?" + now.getTime();
+  }
+
+  function RefreshImage()
+  {
+    document.ScreenCapture.src = MyScreenBitmap.src;
+    document.images.ScreenCapture.alt = "refreshed image";
+//    delete MyScreenBitmap.src;
+  }
+
+  function TimedCycle()
+  {
+    CycleCount = CycleCount + 1;
+    document.images.ScreenCapture.alt = "refreshing image...";
+    if (FetchCycle)
+    {
+      FetchImage();
+      FetchCycle = false;
+    }
+    else
+    {
+      RefreshImage();
+      FetchCycle = true;
+    }
+    self.setTimeout ("TimedCycle()", RefreshInterval);
+  }  
+
+ //-->
+ </SCRIPT>
+
+<!-- BODY onLoad="TimedCycle();" -->
+<BODY onLoad="self.setTimeout ('TimedCycle()', RefreshInterval);">
+<center>
+
+  <table align="center" valign="middle" border="1" cellpadding="5">
+    <tr><td align="center" valign="middle" >
+      <IMG name="ScreenCapture" width="256" src="screen_capture2.bmp" alt="Can't load device screen image">
+    </td></tr>
+  </table>
+
+</center>
+
+</body>
+
+</html>

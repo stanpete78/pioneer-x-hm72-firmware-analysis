@@ -1,0 +1,58 @@
+<html>
+<head>
+<title>Firmware status</title>
+<link href="UPnPFormats.css" rel="stylesheet" type="text/css">
+</head>
+
+<body bgcolor="#000000" class="scrollbar_black">
+<table width="100%" height="100%" border="0" class="maintable">
+  <tr> 
+    <td height="23" bgcolor="#0000FF">
+	    <table width="100%" border="0" cellspacing="0" cellpadding="3" height="10">
+          <tr valign="middle" align="center"> 
+            <td height="10"></td>
+            <td height="10" width="300" bgcolor="#FFFFFF"> 
+              <div align="center">
+                 <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <a href="status_firmware.html" target="mainFrame">Firmware</a> &brvbar;
+                    <a href="status_network.html" target="mainFrame">Network</a> &brvbar;
+                    <a href="status_wireless.html" target="mainFrame">Wireless</a>
+                 </font>
+              </div>
+            </td>
+            <td height="10" width="10"></td>
+          </tr>
+        </table>
+     </td>
+  </tr>
+  <tr> 
+    <td align="center" valign="top" bgcolor="#FFFFFF">
+      <br>
+	  <br>
+	  <table width="75%" border="0">
+        <tr>
+          <td valign="top">Date:</td>
+          <td><object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareDate"/>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">Version:</td>
+          <td><object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareID"/>.<object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareVersion"/>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">Time:</td>
+          <td><object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareTime"/>.<object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareVersion"/>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">ID:</td>
+          <td><object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareMajor"/>.<object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareMinor"/>.<object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareID"/>.<object bco:upnp_tpl_tag_code="RenderingControlServiceID:custom:FirmwareVersion"/>
+          </td>
+        </tr>
+      </table>
+      </td>
+  </tr>
+</table>
+</body>
+</html>

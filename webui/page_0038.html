@@ -1,0 +1,123 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Style-Type" content="text/css"><link rel="shortcut icon" href="./img/Opening009.ico" type="image/vnd.microsoft.icon"><title>Web Control - Software License Notice</title><link rel="stylesheet" href="./css/index.css" type="text/css"><script src="./js/cmn.js"></script><script src='./WiringNavi/js/words_list/deDE_txt.js'></script><script src='./WiringNavi/js/words_list/daDK_txt.js'></script><script src='./WiringNavi/js/words_list/enUS_txt.js'></script><script src='./WiringNavi/js/words_list/esES_txt.js'></script><script src='./WiringNavi/js/words_list/frFR_txt.js'></script><script src='./WiringNavi/js/words_list/itIT_txt.js'></script><script src='./WiringNavi/js/words_list/jpJP_txt.js'></script><script src='./WiringNavi/js/words_list/nbNO_txt.js'></script><script src='./WiringNavi/js/words_list/nlNL_txt.js'></script><script src='./WiringNavi/js/words_list/ruRU_txt.js'></script><script src='./WiringNavi/js/words_list/svSE_txt.js'></script><script src='./WiringNavi/js/words_list/zhCN_txt.js'></script><script src='./WiringNavi/js/words_list/zhTW_txt.js'></script><script src='./WiringNavi/js/words_list/deDE_sel.js'></script><script src='./WiringNavi/js/words_list/daDK_sel.js'></script><script src='./WiringNavi/js/words_list/enUS_sel.js'></script><script src='./WiringNavi/js/words_list/esES_sel.js'></script><script src='./WiringNavi/js/words_list/frFR_sel.js'></script><script src='./WiringNavi/js/words_list/itIT_sel.js'></script><script src='./WiringNavi/js/words_list/jpJP_sel.js'></script><script src='./WiringNavi/js/words_list/nbNO_sel.js'></script><script src='./WiringNavi/js/words_list/nlNL_sel.js'></script><script src='./WiringNavi/js/words_list/ruRU_sel.js'></script><script src='./WiringNavi/js/words_list/svSE_sel.js'></script><script src='./WiringNavi/js/words_list/zhCN_sel.js'></script><script src='./WiringNavi/js/words_list/zhTW_sel.js'></script><script language="JavaScript">
+<!--
+var lang = "en-US";//デフォルト言語
+
+//---------------------------
+// HTMLロード時に実行されます
+function initial_setting()
+{
+var vars = getUrlVars();//URLパラメータを取得（言語指定 lang=xxxx）
+
+//言語指定パラメータがあれば指定パラメータを使用
+if(vars["lang"]) {
+lang = vars["lang"];
+}
+else {
+lang = getLangBrowser();
+}
+
+load_words_list();
+langSetting();
+}
+
+function load_words_list()
+{
+var txt_obj = new Object();
+var sel_obj = new Object();
+
+getTextSelObj(txt_obj, sel_obj);
+SetTextData(txt_obj);
+}
+
+function changeLang( obj )
+{
+lang = obj.value;
+if( location.hostname != false ){
+localStorage.setItem("langData",lang);
+}
+load_words_list();
+}
+
+//---------------------------
+// 説明文ファイルデータ設定
+function SetTextData(txt_data)
+{
+var w = txt_data.WiringNavi;
+document.getElementById("ntLi").innerHTML = w.WN320;
+}
+
+function getTextSelObj( tObj, sObj )
+{
+switch ( lang ){
+case "de-DE":
+case "de-de":
+set_deDE_txt(tObj);
+set_deDE_sel(sObj);
+break;
+case "en-US":
+case "en-us":
+set_enUS_txt(tObj);
+set_enUS_sel(sObj);
+break;
+case "es-ES":
+case "es-es":
+set_esES_txt(tObj);
+set_esES_sel(sObj);
+break;
+case "fr-FR":
+case "fr-fr":
+set_frFR_txt(tObj);
+set_frFR_sel(sObj);
+break;
+case "it-IT":
+case "it-it":
+set_itIT_txt(tObj);
+set_itIT_sel(sObj);
+break;
+case "jp-JP":
+case "jp-jp":
+set_jpJP_txt(tObj);
+set_jpJP_sel(sObj);
+break;
+case "nb-NO":
+case "nb-no":
+set_nbNO_txt(tObj);
+set_nbNO_sel(sObj);
+break;
+case "nl-NL":
+case "nl-nl":
+set_nlNL_txt(tObj);
+set_nlNL_sel(sObj);
+break;
+case "ru-RU":
+case "ru-ru":
+set_ruRU_txt(tObj);
+set_ruRU_sel(sObj);
+break;
+case "sv-SE":
+case "sv-se":
+set_svSE_txt(tObj);
+set_svSE_sel(sObj);
+break;
+case "da-DK":
+case "da-dk":
+set_daDK_txt(tObj);
+set_daDK_sel(sObj);
+break;
+case "zh-CN":
+case "zh-cn":
+set_zhCN_txt(tObj);
+set_zhCN_sel(sObj);
+break;
+case "zh-TW":
+case "zh-tw":
+set_zhTW_txt(tObj);
+set_zhTW_sel(sObj);
+break;
+default:
+break;
+}
+}
+
+//-->
+</script></head><body onload="initial_setting()"><div id="ntBase"><div class="ntLangSel"><form name="formLang"><select name="lang" onchange="changeLang(this);"></select></form></div><div class="noticeTtl_wm"><div class="noticeTtl_bp" id="AVNV">Software License Notice</div></div><div class="noticeSubTtl" id="ntLi">The licenses for the open source software used on this unit are shown below. For accuracy purposes, here we have included the original texts (in English).</div><div class="ntMgn"><div class="ntLeft"><a href="./notice/notice_Boost.html" target="_blank">Boost</a></div><div class="ntRight"><a href="./notice/notice_Tremor.html" target="_blank">Tremor</a></div><div class="ntLeft"><a href="./notice/notice_Expat.html" target="_blank">Expat</a></div><div class="ntRight"><a href="./notice/notice_MersenneTwister.html" target="_blank">Mersenne Twister</a></div><div class="ntLeft"><a href="./notice/notice_FastDelegate.html" target="_blank">FastDelegate</a></div><div class="ntRight"><a href="./notice/notice_zlib.html" target="_blank">zlib</a></div><div class="ntLeft"><a href="./notice/notice_libogg.html" target="_blank">libogg</a></div><div class="ntRight"><a href="./notice/notice_cURL.html" target="_blank">cURL</a></div><div class="ntLeft"><a href="./notice/notice_libvorbis.html" target="_blank">libvorbis</a></div><div class="ntRight"><a href="./notice/notice_c-ares.html" target="_blank">c-ares</a></div><div class="ntLeft"><a href="./notice/notice_Tremolo.html" target="_blank">Tremolo</a></div></div><div id="indexBack"><a href="index.html"></a></div><img src="./img/Opening007.png" width="800" height="3" border="0"/><a href="index.html"><img src="./img/Opening001.png" border="0"/></a><img src="./img/Opening002.png" height="28" style="float:right;"/></div></body></html>

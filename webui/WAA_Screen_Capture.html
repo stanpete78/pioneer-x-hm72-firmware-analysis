@@ -1,0 +1,255 @@
+<html>
+<head>
+<!-- meta http-equiv="refresh" content="2;URL=remote_if.html" -->
+<title>WAA Screen Capture</title>
+ <STYLE type="text/css">
+  BODY { background: black; color: white }
+  A:link { color: red }
+  A:visited { color: red }
+  A:active { color: fuchsia }
+  TD { font-size: -1 ; font-style: bold}
+  BUTTON { hspace: 0 ; vspace: 0 }
+  FORM { margin-bottom: 0 ; margin-top: 0 }
+ </STYLE>
+
+</head>
+
+<BODY>
+<center>
+    <table border="0" width="100%" align=center>
+      <tr>
+        <td align="center" valign="middle" >
+          <table border="0" width="100%" align=center>
+            <tr>
+              <td align="center" valign="middle" >
+                <object id="Power" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlPower"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle" >
+          <object id="Information" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlInfo"
+          xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td align="center" valign="middle">
+          <table border="0" width="100%" align=center>
+            <tr><td align="center" valign="middle" >
+                volume
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="VolumeUp" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlVolumeUp"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="VolumeDown" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlVolumeDown"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="Mute" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlMute"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+          </table>
+        </td>
+        <td align="center" valign="middle">
+          <table border="0" width="100%" align=center>
+            <tr>
+              <td></td><td align="center" valign="middle" >
+                <object id="ScrollUp" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlScrollUp"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td><td></td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle" >
+                <object id="Cancel" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlCancel"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="Home" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlHome"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="Select" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlSelect"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle" >
+              </td>
+              <td align="center" valign="middle" >
+                <object id="ScrollDown" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlScrollDown"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+              </td>
+            </tr>
+          </table>
+
+          <table border="0" width="100%" align=center>
+            <tr>
+              <td></td><td align="center" valign="middle" >
+                <object id="Repeat" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlRepeat"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td></td><td align="center" valign="middle" >
+                <object id="Shuffle" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlShuffle"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+          </table>
+        </td>
+
+<!--
+        <td align="center" valign="middle">
+          <table border="0" width="100%" align=center>
+            <tr><td align="center" valign="middle" >
+              <object id="ChannelUp" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlChannelUp"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="ChannelDown" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlChannelDown"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+           </td></tr>
+           <tr><td align="center" valign="middle" >
+           </td></tr>
+          </table>
+        </td>
+-->
+      </tr>
+      <tr>
+        <td align="center" valign="middle" colspan=3>
+          <table border="0" width="100%" align=center>
+            <tr>
+              <td align="center" valign="middle" >
+                <object id="FR_Prev" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlFR_Prev"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="Stop" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlStop"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="Play_Pause" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlPlay_Pause"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="PlayAll" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlPlayAll"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle" >
+                <object id="FF_Next" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlFF_Next"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+             </td>
+           </tr>
+         </table>
+       </td>
+    </tr>
+      
+    <tr>
+        <td align="center" valign="middle" colspan=2>
+          <table border="0" width="100%" align=center>
+            <tr>
+              <td align="center" valign="middle" >
+                .,!&space
+                <object id="Number1" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber1"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                ABC
+                <object id="Number2" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber2"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                DEF
+                <object id="Number3" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber3"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle">
+                GHI
+                <object id="Number4" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber4"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                JKL
+                <object id="Number5" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber5"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                MNO
+                <object id="Number6" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber6"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle">
+                PQRS
+                <object id="Number7" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber7"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                TUV
+                <object id="Number8" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber8"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="middle">
+                WXYZ
+                <object id="Number9" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber9"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+            </tr>
+            <tr>
+              <td>
+              </td>
+              <td align="center" valign="middle">
+                * # _
+                <object id="Number0" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNumber0"
+                xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+              </td>
+              <td align="center" valign="bottom">
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td align="center" valign="middle">
+          <table border="0" width="100%" align=center>
+            <tr><td align="center" valign="middle" >
+              <object id="Store" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlStore"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="Favourites" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlFavourites"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="Network" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlNetwork"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="IRadio" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlIRadio"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="LikeIt" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlLikeIt"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+            <tr><td align="center" valign="middle" >
+              <object id="DislikeIt" s:upnp_tpl_tag_code="HtmlPageServiceID:action:actHtmlIrControlDislikeIt"
+              xmlns:s="bridgeCo.net:upnp:upnp_presentation_sheme" />
+            </td></tr>
+          </table>
+        </td>
+
+    </tr>
+  </table>
+
+</center>
+
+</body>
+
+</html>
